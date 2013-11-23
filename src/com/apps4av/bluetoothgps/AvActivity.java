@@ -40,7 +40,7 @@ import android.content.Intent;
  * @author zkhan
  *
  */
-public class MainActivity extends Activity implements android.location.GpsStatus.NmeaListener, LocationListener {
+public class AvActivity extends Activity implements android.location.GpsStatus.NmeaListener, LocationListener {
 
     public BluetoothAdapter mBluetoothAdapter;
     private BluetoothServerSocket mServerSocket;
@@ -68,6 +68,7 @@ public class MainActivity extends Activity implements android.location.GpsStatus
         if (mBluetoothAdapter == null) {
             return;
         }
+        
         if (!mBluetoothAdapter.isEnabled()) {
             Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
             startActivityForResult(enableBtIntent, 1);

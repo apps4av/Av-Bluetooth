@@ -18,7 +18,7 @@ Redistribution and use in source and binary forms, with or without modification,
 
     <Button
         android:id="@+id/main_button_pair"
-        android:layout_width="wrap_content"
+        android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:layout_alignParentTop="true"
         android:layout_alignParentLeft="true"
@@ -27,20 +27,20 @@ Redistribution and use in source and binary forms, with or without modification,
 
     <Button
         android:id="@+id/main_button_listen"
-        android:layout_width="wrap_content"
+        android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:layout_alignParentLeft="true"
         android:layout_below="@+id/main_button_pair"
-        android:layout_marginLeft="20dp"
+        android:layout_margin="20dp"
         android:text="@string/Listen" />
 
     <TextView
         android:id="@+id/main_text"
-        android:layout_width="wrap_content"
+        android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:layout_alignParentLeft="true"
         android:layout_below="@+id/main_button_listen"
-        android:layout_marginLeft="20dp"
+        android:layout_margin="20dp"
         android:text="@string/NotConnected" />
     
 </RelativeLayout>

@@ -31,7 +31,7 @@ Redistribution and use in source and binary forms, with or without modification,
         android:label="@string/app_name"
         android:theme="@style/AppTheme" >
         <activity
-            android:name="com.apps4av.bluetoothgps.MainActivity"
+            android:name="com.apps4av.bluetoothgps.AvActivity"
             android:label="@string/app_name" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

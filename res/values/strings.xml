@@ -15,7 +15,7 @@ Redistribution and use in source and binary forms, with or without modification,
     <string name="app_name">Av Bluetooth</string>
     <string name="Listen">Listen For Connections</string>
     <string name="Listening">Listening For Connections</string>
-    <string name="NotConnected">Not Connected</string>
+    <string name="NotConnected">Not Connected. Please install this app to a phone/tablet that you will make a Bluetooth GPS. Then on the other tablet/phone, start Avare External IO module, and Avare. Both devices must be paired.</string>
     <string name="Connected">Connected</string>
     <string name="Pair">Enable Pairing</string>
         
