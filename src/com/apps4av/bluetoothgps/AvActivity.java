@@ -13,11 +13,10 @@ package com.apps4av.bluetoothgps;
 
 import java.util.UUID;
 
-
-
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.os.AsyncTask;
 import android.os.Bundle;
 
 import java.io.OutputStream;
@@ -25,6 +24,7 @@ import java.io.OutputStream;
 
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.WindowManager;
 import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.TextView;
@@ -34,6 +34,7 @@ import android.bluetooth.BluetoothServerSocket;
 import android.bluetooth.BluetoothSocket;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.ActivityInfo;
 
 /**
  * 
@@ -42,16 +43,19 @@ import android.content.Intent;
  */
 public class AvActivity extends Activity implements android.location.GpsStatus.NmeaListener, LocationListener {
 
-    public BluetoothAdapter mBluetoothAdapter;
-    private BluetoothServerSocket mServerSocket;
+    /*
+     * Init everything. The UUID is unique for Avare
+     */
+    private BluetoothAdapter mBluetoothAdapter = null;
+    private BluetoothServerSocket mServerSocket = null;
     private static final UUID MY_UUID_SECURE = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
     private BluetoothSocket mBtSocket = null;
     private static OutputStream mStream = null;
-    private Button mPairButton;
-    private Button mListenButton;
-    private Thread mListenThread = null;
-    private LocationManager mLocationManager;
+    private BluetoothProcess mListenTask = null;
+    private LocationManager mLocationManager = null;
     private TextView mTv;
+    private TextView mTvGps;
+    private Button mPairButton;
 
     /**
      * 
@@ -59,21 +63,19 @@ public class AvActivity extends Activity implements android.location.GpsStatus.N
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        
+        /*
+         * Portrait and screen on
+         */
+        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);            
+
         LayoutInflater layoutInflater = (LayoutInflater)getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         View view = layoutInflater.inflate(R.layout.main, null);
         setContentView(view);
-
-        mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
-        if (mBluetoothAdapter == null) {
-            return;
-        }
         
-        if (!mBluetoothAdapter.isEnabled()) {
-            Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-            startActivityForResult(enableBtIntent, 1);
-        }   
-        
+        /*
+         * Get a pairing button to start pairing initially.
+         */
         mPairButton = (Button)view.findViewById(R.id.main_button_pair);
         mPairButton.setOnClickListener(new OnClickListener() {
             
@@ -86,48 +88,58 @@ public class AvActivity extends Activity implements android.location.GpsStatus.N
             }
         });
 
-        mListenButton = (Button)view.findViewById(R.id.main_button_listen);
-        mListenButton.setOnClickListener(new OnClickListener() {
-            
-            @Override
-            public void onClick(View v) {
-                
-                if(mListenButton.getText().equals(getString(R.string.Listen))) {
-                    BluetoothServerSocket tmp = null;
-                    try {
-                        tmp = mBluetoothAdapter.listenUsingRfcommWithServiceRecord(getString(R.string.app_name), MY_UUID_SECURE);
-                    } 
-                    catch (Exception e) { 
-                        return;
-                    }
-                    
-                    mServerSocket = tmp;
-                    mListenButton.setText(getString(R.string.Listening));
-                    mListenThread = new BluetoothProcess();
-                    mListenThread.start();                    
-                }
-                else {
-                    mListenButton.setText(getString(R.string.Listen));
-                    mListenThread.interrupt();
-                }
-            }
-        });
-        
-        mTv = (TextView)view.findViewById(R.id.main_text);
-
+        mTv = (TextView)view.findViewById(R.id.main_text_state);
+        mTvGps = (TextView)view.findViewById(R.id.main_text_gps);
     }  
 
-    
+       
     /**
      * 
      */
     @Override
     public void onPause() {
-        super.onResume();
+        super.onPause();
+        
+        /*
+         * Stop location manager
+         */
         if(mLocationManager != null) {
             mLocationManager.removeUpdates((LocationListener)this);
             mLocationManager.removeNmeaListener(this);
+            mLocationManager = null;
         }
+        
+        /*
+         * Stop the task
+         */
+        if(mListenTask != null) {
+            if(mListenTask.getStatus() == AsyncTask.Status.RUNNING) {
+                mListenTask.cancel(true);
+            }
+        }
+        
+        /*
+         * Clear all sockets
+         */
+        if(null != mServerSocket) {
+            try {
+                mServerSocket.close();
+            } 
+            catch (Exception e) {
+            }
+        }
+        if(null != mBtSocket) {
+            try {
+                mBtSocket.close();
+            } 
+            catch (Exception e) {
+            }
+        }
+        mBtSocket = null;
+        mServerSocket = null;
+        mStream = null;
+        mBluetoothAdapter = null;
+        mListenTask = null;
     }
     
     /**
@@ -136,7 +148,26 @@ public class AvActivity extends Activity implements android.location.GpsStatus.N
     @Override
     public void onResume() {
         super.onResume();
+
+        /*
+         * Get adapter. If cannot get now, it will be get from the task
+         */
+        mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+        if (mBluetoothAdapter != null) {
         
+            if (!mBluetoothAdapter.isEnabled()) {
+                mTv.setText(getString(R.string.Disabled));
+                Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+                startActivityForResult(enableBtIntent, 1);
+            }  
+        }
+        else {
+            mTv.setText(getString(R.string.Disabled));
+        }
+
+        /*
+         * Listen NMEA GPS
+         */
         mLocationManager = (LocationManager)getSystemService(Context.LOCATION_SERVICE);
         try {
             mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000, 0,(LocationListener)this);
@@ -144,7 +175,14 @@ public class AvActivity extends Activity implements android.location.GpsStatus.N
         }
         catch (Exception e) {
             mLocationManager = null;
-        }      
+            mTv.setText(getString(R.string.Disabled));
+        } 
+        
+        /*
+         * Start BT task
+         */
+        mListenTask = new BluetoothProcess();
+        mListenTask.execute();
     }
 
     /**
@@ -152,50 +190,104 @@ public class AvActivity extends Activity implements android.location.GpsStatus.N
      * @return
      */
     private int write(byte[] buffer) {
+        /*
+         * Simply write the NMEA output, no need to parse it.
+         */
         int wrote = buffer.length;
         try {
             mStream.write(buffer, 0, buffer.length);
         } 
         catch(Exception e) {
             wrote = -1;
-            mTv.setText(getString(R.string.NotConnected));
         }
         return wrote;
     }
 
+    
     /**
      * 
      * @author zkhan
      *
      */
-    private class BluetoothProcess extends Thread {
+    private class BluetoothProcess extends AsyncTask<Void, String, Void> {
 
         @Override
-        public void run() {
+        protected Void doInBackground(Void... params) {
             
-            /*
-             * Now accept
-             */
+            
             while (true) {
 
                 try {
-                    mBtSocket = mServerSocket.accept();
-                    mStream = mBtSocket.getOutputStream();
+                    Thread.sleep(100);
                 } 
                 catch (Exception e) {
-                    break;
                 }
-                if (mBtSocket != null) {
+                
+                /*
+                 * This should handle the case where initially BT was disabled
+                 */
+                if (mBluetoothAdapter == null) {
+                    mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+                    mTv.setText(getString(R.string.Disabled));
+                    continue;
+                }
+
+                
+                /*
+                 * Start listening with server socket
+                 */
+                if(null == mServerSocket) {
+                    /*
+                     * Start listening
+                     */
+                    BluetoothServerSocket tmp = null;
                     try {
-                       mServerSocket.close();
+                        tmp = mBluetoothAdapter.listenUsingRfcommWithServiceRecord(getString(R.string.app_name), MY_UUID_SECURE);
                     } 
                     catch (Exception e) {
                     }
-                    break;
+                    
+                    mServerSocket = tmp;
                 }
-                
+                else {
+                    
+                    /*
+                     * Got a connection?
+                     */
+                    if(null == mBtSocket) {
+                        try {
+                            mBtSocket = mServerSocket.accept();
+                            /*
+                             * Get output stream
+                             */
+                            mStream = mBtSocket.getOutputStream();
+                        } 
+                        catch (Exception e) {
+                        }
+                    }
+                    if(null != mBtSocket) {
+                        publishProgress(getString(R.string.Connected));
+                    }
+                }
             }
+        }        
+
+        @Override
+        protected void onPostExecute(Void params) {             
         }
+
+        @Override
+        protected void onPreExecute() {
+        }
+        
+        @Override
+        protected void onProgressUpdate(String... val) {
+            /*
+             * Touch views only in UI thread
+             */
+            mTv.setText(val[0]);            
+        }
+        
     }
 
     /**
@@ -203,12 +295,18 @@ public class AvActivity extends Activity implements android.location.GpsStatus.N
      */
     @Override
     public void onNmeaReceived(long timestamp, String nmea) {
+        /*
+         * Should be locked when receiving
+         */
+        mTvGps.setText(getString(R.string.GPSL));
         if(mBtSocket != null) {
-            mTv.setText(getString(R.string.Connected));
 
+            /*
+             * Write to BT
+             */
             int wrote = write(nmea.getBytes());
             if(wrote < 0) {
-                mListenButton.setText(getString(R.string.Listen));
+                mTv.setText(getString(R.string.NotConnected));
                 try {
                     mBtSocket.close();
                 } catch (Exception e) {

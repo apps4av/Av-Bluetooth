@@ -13,10 +13,12 @@ Redistribution and use in source and binary forms, with or without modification,
 <resources>
 
     <string name="app_name">Av Bluetooth</string>
-    <string name="Listen">Listen For Connections</string>
-    <string name="Listening">Listening For Connections</string>
-    <string name="NotConnected">Not Connected. Please install this app to a phone/tablet that you will make a Bluetooth GPS. Then on the other tablet/phone, start Avare External IO module, and Avare. Both devices must be paired.</string>
-    <string name="Connected">Connected</string>
     <string name="Pair">Enable Pairing</string>
+    <string name="Disabled">BT Disabled</string>
+    <string name="NotConnected">BT Disconnected</string>
+    <string name="Connected">BT Connected</string>
+    <string name="GPSNL">GPS Not Locked</string>
+    <string name="GPSL">GPS Locked</string>
+    <string name="Message">Please install this app to a phone/tablet that you will make a Bluetooth GPS. Then on the other tablet/phone, start Avare External IO module, and Avare. Connect to this app from Avare External IO module. Both the devices must be paired before connecting.</string>
         
 </resources>

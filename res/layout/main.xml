@@ -25,22 +25,33 @@ Redistribution and use in source and binary forms, with or without modification,
         android:layout_margin="20dp"
         android:text="@string/Pair" />
 
-    <Button
-        android:id="@+id/main_button_listen"
+    <TextView
+        android:id="@+id/main_text_state"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:layout_alignParentLeft="true"
         android:layout_below="@+id/main_button_pair"
         android:layout_margin="20dp"
-        android:text="@string/Listen" />
+        android:textSize="30sp"
+        android:text="@string/NotConnected" />
 
+    <TextView
+        android:id="@+id/main_text_gps"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:layout_below="@+id/main_text_state"
+        android:layout_margin="20dp"
+        android:textSize="30sp"
+        android:text="@string/GPSNL" />
+    
     <TextView
         android:id="@+id/main_text"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:layout_alignParentLeft="true"
-        android:layout_below="@+id/main_button_listen"
+        android:layout_below="@+id/main_text_gps"
         android:layout_margin="20dp"
-        android:text="@string/NotConnected" />
+        android:text="@string/Message" />
     
 </RelativeLayout>
