@@ -43,7 +43,7 @@ Redistribution and use in source and binary forms, with or without modification,
         android:layout_below="@+id/main_text_state"
         android:layout_margin="20dp"
         android:textSize="30sp"
-        android:text="@string/GPSNL" />
+        android:text="@string/GPSNotConnected" />
     
     <TextView
         android:id="@+id/main_text"
